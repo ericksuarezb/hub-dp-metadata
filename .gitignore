@@ -1,0 +1,38 @@
+.DS_Store
+
+# Root env files
+.env
+.env.local
+.env.*.local
+config.credentials.json
+apps/docgen-sql/config.credentials.json
+
+# Runtime state
+.run/
+volumes/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+UNKNOWN.egg-info/
+
+# Node
+node_modules/
+
+# Notebook/editor artifacts
+.ipynb_checkpoints/
+
+# App-local env and generated outputs
+apps/docgen-sql/.env.local
+apps/docgen-sql/output/
+apps/docgen-sql/.pytest_cache/
+apps/docgen-sql/docgen_sql.egg-info/
+apps/docgen-sql/supabase/.temp/
+apps/docgen-sql/supabase/.branches/
+
+# Optional build artifacts kept local unless explicitly needed
+apps/docgen-sql/web/dist/

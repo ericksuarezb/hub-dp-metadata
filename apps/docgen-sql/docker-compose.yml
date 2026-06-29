@@ -1,0 +1,11 @@
+services:
+  duckdb:
+    profiles: ["duckdb"]
+    image: duckdb/duckdb:latest
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+      - ./data:/workspace/data
+    stdin_open: true
+    tty: true
+    command: ["sh", "-lc", "sleep infinity"]

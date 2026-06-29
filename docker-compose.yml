@@ -1,0 +1,196 @@
+x-redash-service: &redash-service
+  image: redash/redash:${REDASH_VERSION:-25.8.0}
+  restart: unless-stopped
+  profiles: ["redash", "redash-export"]
+  depends_on:
+    - redash-postgres
+    - redash-redis
+  environment:
+    PYTHONUNBUFFERED: "0"
+    REDASH_LOG_LEVEL: INFO
+    REDASH_REDIS_URL: redis://redash-redis:6379/0
+    REDASH_DATABASE_URL: postgresql://${REDASH_POSTGRES_USER:-postgres}:${REDASH_POSTGRES_PASSWORD:-postgres}@redash-postgres:5432/${REDASH_POSTGRES_DB:-redash}
+    REDASH_SECRET_KEY: ${REDASH_SECRET_KEY:-change-me-before-first-run}
+    REDASH_COOKIE_SECRET: ${REDASH_COOKIE_SECRET:-change-me-before-first-run}
+    REDASH_WEB_WORKERS: ${REDASH_WEB_WORKERS:-2}
+    REDASH_FEATURE_ALLOW_CUSTOM_JS_VISUALIZATIONS: ${REDASH_FEATURE_ALLOW_CUSTOM_JS_VISUALIZATIONS:-true}
+    REDASH_MAIL_SERVER: ${ENTROPY_MAIL_HOST:-mailhog}
+    REDASH_MAIL_PORT: ${ENTROPY_MAIL_PORT:-1025}
+    REDASH_MAIL_DEFAULT_SENDER: redash@local.test
+
+services:
+  gateway:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    profiles: ["hub"]
+    ports:
+      - "80:80"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - landing
+      - datacontract-editor
+      - entropy-web
+      - mailhog
+
+  landing:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    profiles: ["hub"]
+    volumes:
+      - ./apps/landing/site:/usr/share/nginx/html:ro
+
+  datacontract-editor:
+    image: datacontract/editor:0.1.5
+    restart: unless-stopped
+    ports:
+      - "4273:4173"
+    volumes:
+      - ./apps/datacontract-editor/dist:/app/dist
+
+  entropy-web:
+    image: entropydata/entropy-data-ce:latest
+    restart: unless-stopped
+    environment:
+      APPLICATION_HOST_WEB: http://entropy.localhost
+      SPRING_DATASOURCE_URL: jdbc:postgresql://entropy-postgres:5432/${ENTROPY_POSTGRES_DB:-postgres}
+      SPRING_DATASOURCE_USERNAME: ${ENTROPY_POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${ENTROPY_POSTGRES_PASSWORD:-postgres}
+      SPRING_MAIL_HOST: ${ENTROPY_MAIL_HOST:-mailhog}
+      SPRING_MAIL_PORT: ${ENTROPY_MAIL_PORT:-1025}
+    depends_on:
+      - entropy-postgres
+      - mailhog
+    ports:
+      - "8082:8080"
+
+  entropy-postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${ENTROPY_POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${ENTROPY_POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${ENTROPY_POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - ./volumes/entropy-postgres:/var/lib/postgresql/data
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    restart: unless-stopped
+    platform: linux/amd64
+    ports:
+      - "8026:8025"
+
+  apache-answer:
+    image: apache/answer
+    restart: unless-stopped
+    profiles: ["answer", "hub"]
+    ports:
+      - "9080:80"
+    volumes:
+      - ./volumes/answer-data:/data
+
+  redash-postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    profiles: ["redash", "redash-export"]
+    environment:
+      POSTGRES_DB: ${REDASH_POSTGRES_DB:-redash}
+      POSTGRES_USER: ${REDASH_POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${REDASH_POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - ./volumes/redash-postgres:/var/lib/postgresql/data
+
+  redash-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    profiles: ["redash", "redash-export"]
+
+  redash-server:
+    <<: *redash-service
+    command: server
+    ports:
+      - "5001:5000"
+
+  redash-scheduler:
+    <<: *redash-service
+    command: scheduler
+    depends_on:
+      - redash-server
+
+  redash-scheduled-worker:
+    <<: *redash-service
+    command: worker
+    depends_on:
+      - redash-server
+    environment:
+      PYTHONUNBUFFERED: "0"
+      REDASH_LOG_LEVEL: INFO
+      REDASH_REDIS_URL: redis://redash-redis:6379/0
+      REDASH_DATABASE_URL: postgresql://${REDASH_POSTGRES_USER:-postgres}:${REDASH_POSTGRES_PASSWORD:-postgres}@redash-postgres:5432/${REDASH_POSTGRES_DB:-redash}
+      REDASH_SECRET_KEY: ${REDASH_SECRET_KEY:-change-me-before-first-run}
+      REDASH_COOKIE_SECRET: ${REDASH_COOKIE_SECRET:-change-me-before-first-run}
+      REDASH_FEATURE_ALLOW_CUSTOM_JS_VISUALIZATIONS: ${REDASH_FEATURE_ALLOW_CUSTOM_JS_VISUALIZATIONS:-true}
+      REDASH_MAIL_SERVER: ${ENTROPY_MAIL_HOST:-mailhog}
+      REDASH_MAIL_PORT: ${ENTROPY_MAIL_PORT:-1025}
+      REDASH_MAIL_DEFAULT_SENDER: redash@local.test
+      QUEUES: scheduled_queries,schemas
+      WORKERS_COUNT: 1
+
+  redash-adhoc-worker:
+    <<: *redash-service
+    command: worker
+    depends_on:
+      - redash-server
+    environment:
+      PYTHONUNBUFFERED: "0"
+      REDASH_LOG_LEVEL: INFO
+      REDASH_REDIS_URL: redis://redash-redis:6379/0
+      REDASH_DATABASE_URL: postgresql://${REDASH_POSTGRES_USER:-postgres}:${REDASH_POSTGRES_PASSWORD:-postgres}@redash-postgres:5432/${REDASH_POSTGRES_DB:-redash}
+      REDASH_SECRET_KEY: ${REDASH_SECRET_KEY:-change-me-before-first-run}
+      REDASH_COOKIE_SECRET: ${REDASH_COOKIE_SECRET:-change-me-before-first-run}
+      REDASH_FEATURE_ALLOW_CUSTOM_JS_VISUALIZATIONS: ${REDASH_FEATURE_ALLOW_CUSTOM_JS_VISUALIZATIONS:-true}
+      REDASH_MAIL_SERVER: ${ENTROPY_MAIL_HOST:-mailhog}
+      REDASH_MAIL_PORT: ${ENTROPY_MAIL_PORT:-1025}
+      REDASH_MAIL_DEFAULT_SENDER: redash@local.test
+      QUEUES: queries
+      WORKERS_COUNT: 2
+
+  redash-worker:
+    <<: *redash-service
+    command: worker
+    depends_on:
+      - redash-server
+    environment:
+      PYTHONUNBUFFERED: "0"
+      REDASH_LOG_LEVEL: INFO
+      REDASH_REDIS_URL: redis://redash-redis:6379/0
+      REDASH_DATABASE_URL: postgresql://${REDASH_POSTGRES_USER:-postgres}:${REDASH_POSTGRES_PASSWORD:-postgres}@redash-postgres:5432/${REDASH_POSTGRES_DB:-redash}
+      REDASH_SECRET_KEY: ${REDASH_SECRET_KEY:-change-me-before-first-run}
+      REDASH_COOKIE_SECRET: ${REDASH_COOKIE_SECRET:-change-me-before-first-run}
+      REDASH_FEATURE_ALLOW_CUSTOM_JS_VISUALIZATIONS: ${REDASH_FEATURE_ALLOW_CUSTOM_JS_VISUALIZATIONS:-true}
+      REDASH_MAIL_SERVER: ${ENTROPY_MAIL_HOST:-mailhog}
+      REDASH_MAIL_PORT: ${ENTROPY_MAIL_PORT:-1025}
+      REDASH_MAIL_DEFAULT_SENDER: redash@local.test
+      QUEUES: periodic,emails,default
+      WORKERS_COUNT: 1
+
+  redash-exporter:
+    profiles: ["redash-export"]
+    build:
+      context: ./apps/redash-email
+    restart: "no"
+    depends_on:
+      - redash-server
+      - mailhog
+    environment:
+      REDASH_EXPORT_REDASH_URL: http://redash-server:5000
+      REDASH_EXPORT_API_KEY: ${REDASH_EXPORT_API_KEY:-}
+      REDASH_EXPORT_DASHBOARD: ${REDASH_EXPORT_DASHBOARD:-BAZ | CAPTACION MOCK}
+      REDASH_EXPORT_RECIPIENTS: ${REDASH_EXPORT_RECIPIENTS:-stakeholders@local.test}
+      REDASH_EXPORT_SENDER: ${REDASH_EXPORT_SENDER:-Redash Export <redash@local.test>}
+      REDASH_EXPORT_MAILHOST_URL: ${REDASH_EXPORT_MAILHOST_URL:-smtp://mailhog:1025}
+      REDASH_EXPORT_RENDER_DELAY: ${REDASH_EXPORT_RENDER_DELAY:-2}
+      REDASH_EXPORT_NAVIGATION_TIMEOUT: ${REDASH_EXPORT_NAVIGATION_TIMEOUT:-300}
+    volumes:
+      - ./volumes/redash-reports:/home/automation/reports

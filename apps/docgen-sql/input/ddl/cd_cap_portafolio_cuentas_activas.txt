@@ -1,0 +1,43 @@
+CREATE TABLE ws_ec_cd_baz_bdclientes.cd_cap_portafolio_cuentas_activas (
+id_cliente_alnova STRING,
+id_cliente_finacle STRING,
+id_cliente_unico STRING,
+id_icu_digital STRING,
+cod_tipo_persona STRING,
+id_cuenta STRING,
+id_sucursal_apertura STRING,
+id_sucursal_gestora STRING,
+desc_cod_titular STRING,
+cod_estatus STRING,
+fec_apertura TIMESTAMP,
+cod_bloqueo STRING,
+cod_tipo_moneda STRING,
+fec_ultima_txn TIMESTAMP,
+id_sucursal_ultima_txn STRING,
+cod_usuario_ultima_txn STRING,
+num_ultima_txn INT,
+num_dias_inactividad INT,
+ind_cuenta_nueva TINYINT,
+num_dias_antiguedad INT,
+cod_producto STRING,
+cod_familia_producto STRING,
+cod_nivel_cuenta STRING,
+cod_producto_nivel_01 STRING,
+cod_producto_nivel_02 STRING,
+cod_producto_nivel_03 STRING,
+cod_producto_nivel_04 STRING,
+cod_producto_nivel_05 STRING,
+cod_producto_nivel_06 STRING,
+cod_producto_nivel_07 STRING,
+sld_actual DECIMAL(32,2),
+sld_disponible DECIMAL(32,2),
+cod_sld_disponible STRING,
+fec_carga TIMESTAMP,
+cod_sistema STRING
+)
+PARTITIONED BY (
+cod_titular STRING
+)
+STORED AS PARQUET
+;
+

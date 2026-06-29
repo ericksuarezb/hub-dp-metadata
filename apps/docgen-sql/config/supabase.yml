@@ -1,0 +1,8 @@
+supabase:
+  enabled: false
+  url: "http://127.0.0.1:55421"
+  service_role_key_env: SUPABASE_SERVICE_ROLE_KEY
+  service_role_key: ""
+  timeout_seconds: 10
+  storage_enabled: false
+  storage_bucket: "docgen-artifacts"

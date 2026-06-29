@@ -1,0 +1,35 @@
+:80 {
+  @docgen host docgen.localhost
+  handle @docgen {
+    reverse_proxy host.docker.internal:8310
+  }
+
+  @editor host editor.localhost
+  handle @editor {
+    reverse_proxy datacontract-editor:4173
+  }
+
+  @entropy host entropy.localhost
+  handle @entropy {
+    reverse_proxy entropy-web:8080
+  }
+
+  @redash host redash.localhost
+  handle @redash {
+    reverse_proxy redash-server:5000
+  }
+
+  @answer host answer.localhost
+  handle @answer {
+    reverse_proxy apache-answer:80
+  }
+
+  @mail host mail.localhost
+  handle @mail {
+    reverse_proxy mailhog:8025
+  }
+
+  handle {
+    reverse_proxy landing:80
+  }
+}

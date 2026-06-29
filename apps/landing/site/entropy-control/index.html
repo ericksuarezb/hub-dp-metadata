@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Entropy CE Control de ingestion</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Landing App</p>
+          <h1>Entropy CE Control de ingestion</h1>
+          <p class="lede">
+            Administra por `run_id` qué corridas pasan a Entropy, documenta decisiones
+            de control y ejecuta la importación desde Supabase sin depender de Doc Gen.
+          </p>
+        </div>
+        <div class="hero-actions">
+          <a class="ghost-link" href="/">Volver a la landing</a>
+          <a class="ghost-link" href="http://docgen.localhost" target="_blank" rel="noreferrer">Abrir Doc Gen</a>
+          <button id="refreshButton" class="primary-button" type="button">Recargar</button>
+        </div>
+      </header>
+
+      <section id="errorBox" class="message error hidden" aria-live="polite"></section>
+      <section id="infoBox" class="message success hidden" aria-live="polite"></section>
+
+      <main class="layout">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="section-kicker">Corridas</p>
+              <h2>Buscar run_id</h2>
+            </div>
+            <span id="loadingBadge" class="status-badge hidden">Consultando...</span>
+          </div>
+
+          <label class="field">
+            <span>Buscar por `run_id`, producto, tabla o SQL</span>
+            <input id="searchInput" type="search" placeholder="clientes, run_id, portafolio..." />
+          </label>
+
+          <div id="runList" class="run-list"></div>
+          <p id="emptyState" class="empty-state hidden">No hay corridas disponibles para control de ingestion.</p>
+        </section>
+
+        <section class="panel detail-panel">
+          <div id="detailEmpty" class="detail-empty">
+            <h2>Selecciona una corrida</h2>
+            <p>Cuando elijas un `run_id`, aquí podrás habilitar la ingestion y ejecutar la importación.</p>
+          </div>
+
+          <div id="detailView" class="hidden">
+            <div class="panel-head detail-head">
+              <div>
+                <p class="section-kicker">Detalle</p>
+                <h2 id="detailTitle">Corrida seleccionada</h2>
+                <p id="detailRunId" class="detail-subtitle"></p>
+              </div>
+              <div id="detailMetrics" class="meta-row"></div>
+            </div>
+
+            <label class="toggle-row">
+              <input id="includeCheckbox" type="checkbox" />
+              <span>Habilitar ingestion de este run_id hacia Entropy</span>
+            </label>
+
+            <div class="grid">
+              <label class="field">
+                <span>Revision</span>
+                <select id="reviewStatus">
+                  <option value="pending">Pendiente</option>
+                  <option value="approved">Aprobado</option>
+                  <option value="excluded">Excluido</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>Ultimo estado</span>
+                <input id="lastStatus" type="text" disabled />
+              </label>
+            </div>
+
+            <label class="field">
+              <span>Acciones complementarias</span>
+              <textarea id="complementaryActions" rows="5" placeholder="Validar ownership&#10;Revisar calidad antes de publicar"></textarea>
+            </label>
+
+            <label class="field">
+              <span>Notas de control</span>
+              <textarea id="notes" rows="5" placeholder="Criterio de seleccion, dependencias, bloqueos..."></textarea>
+            </label>
+
+            <div id="detailTimeline" class="meta-stack"></div>
+
+            <div class="actions">
+              <button id="saveButton" class="ghost-button" type="button">Guardar control</button>
+              <button id="previewButton" class="ghost-button" type="button">Previsualizar importacion</button>
+              <button id="executeButton" class="primary-button" type="button">Ejecutar importacion</button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <section id="resultPanel" class="panel hidden">
+        <div class="panel-head">
+          <div>
+            <p class="section-kicker">Resultado</p>
+            <h2>Respuesta de importacion</h2>
+          </div>
+          <span id="resultRegistryCount" class="status-badge"></span>
+        </div>
+        <pre id="resultJson" class="result-json"></pre>
+      </section>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

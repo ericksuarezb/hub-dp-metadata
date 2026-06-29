@@ -1,0 +1,39 @@
+| Nombre                 | Descripción                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------------- |
+| id_cliente_alnova      | Número de cliente alnova                                                                          |
+| id_cliente_finacle     | Número de cliente finacle                                                                         |
+| id_cliente_unico       | Número de cliente unico                                                                           |
+| id_icu_digital         | Número de cliente digital                                                                         |
+| cod_tipo_persona       | Código para identifica si la cuenta está asociada a una persona física o moral: Valores PF, PM    |
+| id_cuenta              | Número de cuenta a 14 posiciones                                                                  |
+| id_sucursal_apertura   | de la apertura                                                                                    |
+| id_sucursal_gestora    | Número de sucursal gestora de la cuenta                                                           |
+| desc_cod_titular       | Código para identifica si la cuenta está asociada al Titular o es una cuenta Adicional            |
+| cod_estatus            | Estatus de la cuenta. Valores: Activa, Cancelada, Pre-cancelada                                   |
+| fec_apertura           | Fecha de apertura de la cuenta                                                                    |
+| cod_bloqueo            | Código que indica si la cuenta está bloqueada o no. Valores: SB: sin bloqueo, CB: con bloqueo     |
+| cod_tipo_moneda        | Código de tipo de moneda de la cuenta. Valores: MXP, USD, OLP                                     |
+| fec_ultima_txn         | Fecha de la ultima operación                                                                      |
+| id_sucursal_ultima_txn | Sucursal donde el cliente realizo la ultima transaccion                                           |
+| cod_usuario_ultima_txn | Usuario de Sistema que realizo la ultima transaccion                                              |
+| num_ultima_txn         | Días trascurridos desde su ultima operación                                                       |
+| num_dias_inactividad   | Número de días transcurridos de la ultima transacción                                             |
+| ind_cuenta_nueva       | Bandera de cuenta nueva. Valores binarios: 1: Nueva, 0: Existente                                 |
+| num_dias_antiguedad    | Días de antigüedad de la cuenta con base en su fecha de apertura                                  |
+| cod_producto           | Código de producto de captación                                                                   |
+| cod_familia_producto   | Categorico de 5 familias para Productos de Captacion Sector Masivo                                |
+| cod_nivel_cuenta       | Tipo de cuenta N2, N4                                                                             |
+| cod_producto_nivel_01  | Descripción del producto al que pertenece la cuenta (nivel 1)                                     |
+| cod_producto_nivel_02  | Descripción del producto al que pertenece la cuenta (nivel 2)                                     |
+| cod_producto_nivel_03  | Descripción del producto al que pertenece la cuenta (nivel 3)                                     |
+| cod_producto_nivel_04  | Descripción del producto al que pertenece la cuenta (nivel 4)                                     |
+| cod_producto_nivel_05  | Descripción del producto al que pertenece la cuenta (nivel 5)                                     |
+| cod_producto_nivel_06  | Descripción del producto al que pertenece la cuenta (nivel 6)                                     |
+| cod_producto_nivel_07  | Descripción del producto al que pertenece la cuenta (nivel 7)                                     |
+| sld_actual             | Saldo actual al día. Se mantiene el saldo al corte semanal en domingo, pero actualiza diariamente |
+| sld_disponible         | Saldo al corte de la semana                                                                       |
+| cod_sld_disponible     | Rango de Saldos estandar operados                                                                 |
+| fec_carga              | Fecha de carga de la informacion                                                                  |
+| cod_sistema            | Sistema de orgien                                                                                 |
+| num_periodo_sem        | Semana de carga de la información                                                                 |
+| cod_titular            | Particion por titularidad O: OTRA y T:TITULAR                                                     |

@@ -1,0 +1,16 @@
+redash_url: ${REDASH_EXPORT_REDASH_URL}
+redash_key: ${REDASH_EXPORT_API_KEY}
+sender: ${REDASH_EXPORT_SENDER}
+mailhost_url: ${REDASH_EXPORT_MAILHOST_URL}
+render_delay: ${REDASH_EXPORT_RENDER_DELAY}
+navigation_timeout: ${REDASH_EXPORT_NAVIGATION_TIMEOUT}
+message_body: |
+  Attached is a PDF export of the Redash dashboard.
+
+  Dashboard: {{ dashboard_url }}
+  Public URL: {{ dashboard_public_url }}
+
+reports:
+  - dashboard: "${REDASH_EXPORT_DASHBOARD}"
+    recipients:
+${REDASH_EXPORT_RECIPIENTS_YAML}

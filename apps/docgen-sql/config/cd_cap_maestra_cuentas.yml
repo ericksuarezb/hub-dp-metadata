@@ -1,0 +1,56 @@
+producto_funcional: Portafolio de cuentas activas de captacion sector masivo personas
+  fisicas
+frecuencia: Diario
+tabla_final_pipeline: ws_ec_cd_bdclientes.cd_cap_maestra_cuentas
+prefijo_archivo: DA_REQ_CD_IT_
+variables:
+  ${dia_fec_ini_sem}: '2026-05-03'
+  ${esquema_cd}: ws_ec_cd_baz_bdclientes
+  ${esquema_cu}: ws_ec_cu_baz_dbclientes
+  ${fec_ini_sem}: '2026-04-27'
+  ${num_periodo_2_sem_atras}: '202616'
+  ${num_periodo_mes}: '202604'
+template: input/templates/DA_REQ_CD_IT_plantilla.docx
+seccion_1:
+  ficha_producto:
+    dominio: Captacion
+    responsable: Equipo de datos de Captacion
+    frecuencia: Diario
+    dia_actualizacion: Lunes a domingo, con corte diario
+    horario_esperado: Disponible antes de las 08:00 hrs
+    granularidad: fisicas
+    proposito: Concentrar el maestra de cuentas activas para consumo de la unidad
+      de Negocios
+    salida_tipo: Tabla
+    consumidores_objetivo:
+    - Analitica
+    - BI
+  tablas_salida:
+  - tabla: ws_ec_cd_bdclientes.cd_cap_maestra_cuentas
+    descripcion: Tabla Crystal Maestra de cuentas que contiene todas la cuenta de
+      personas fisicas.
+  referencia_rapida:
+    que_no_hace: null
+flujo:
+  tipo_documentacion: modular
+  documento_principal:
+    nombre: Documentacion Funcional Estructural
+    template: input/templates/DA_REQ_CD_IT_plantilla.docx
+  modulos:
+  - id: paso_07_cd_cap_maestra_cuentas_view
+    nombre: 01_cd_cap_cuenta_delta.sql
+    intencion: "Contiene el estado actualizado del portafolio de Captaci\xF3n, incluyendo\
+      \ todas las cuentas activas hasta el d\xEDa anterior. Se incorpora informaci\xF3\
+      n detallada sobre las caracter\xEDsticas de cada cuenta, la sucursal correspondiente,\
+      \ asesor fenix, familia de producto y saldos disponibles."
+    sql: input/sql/07_cd_cap_maestra_cuentas_view.sql
+    template: input/templates/DA_REQ_CD_IT_STEP_plantilla.docx
+    depende_de: []
+    salida_tablas:
+    - ${esquema_cd}.cd_cap_maestra_cuentas
+    tags:
+    - cd
+    - cap
+    - maestra
+    - cuentas
+    es_principal: false

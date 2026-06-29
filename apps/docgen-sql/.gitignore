@@ -1,0 +1,9 @@
+.venv/
+.DS_Store
+.pytest_cache/
+web/node_modules/
+web/dist/
+data/duckdb/*
+!data/duckdb/.gitkeep
+data/samples/*
+!data/samples/.gitkeep

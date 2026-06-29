@@ -1,0 +1,145 @@
+producto_funcional: Portafolio de cuentas activas de captacion sector masivo personas
+  fisicas
+frecuencia: Diario
+tabla_final_pipeline: ws_ec_cd_bdclientes.cd_cap_portafolio_cuentas_activas
+prefijo_archivo: DA_REQ_CD_IT_
+variables:
+  "${dia_fec_ini_sem}": "2026-05-03"
+  "${esquema_cd}": "wc_ec_cd_baz_bdclientes"
+  "${esquema_cu}": "ws_ec_cu_baz_bdclientes"
+  "${fec_ini_sem}": "2026-04-27"
+  "${num_periodo_2_sem_atras}": "202615"
+  "${num_periodo_mes}": "202604"
+template: input/templates/DA_REQ_CD_IT_plantilla.docx
+seccion_1:
+  ficha_producto:
+    dominio: Captacion
+    responsable: Equipo de datos de Captacion
+    frecuencia: Diario
+    dia_actualizacion: Lunes a domingo, con corte diario
+    horario_esperado: Disponible antes de las 08:00 hrs
+    granularidad: Una fila por cuenta activa del portafolio de captacion para personas
+      fisicas
+    proposito: Concentrar el portafolio de cuentas activas para consumo analitico,
+      operativo y de procesos posteriores
+    salida_tipo: Tabla
+    consumidores_objetivo:
+    - Analitica
+    - BI
+    - Procesos downstream
+  tablas_salida:
+  - tabla: ws_ec_cd_bdclientes.cd_cap_portafolio_cuentas_activas
+    descripcion: Tabla Crystal final con el portafolio de cuentas activas de captacion
+      del sector masivo de personas fisicas
+  referencia_rapida:
+    que_no_hace:
+    - No corrige problemas historicos de calidad de datos de las fuentes origen
+    - No sustituye reglas de negocio no visibles en el SQL
+flujo:
+  tipo_documentacion: modular
+  documento_principal:
+    nombre: Documentacion Funcional Estructural
+    template: input/templates/DA_REQ_CD_IT_plantilla.docx
+  modulos:
+  - id: paso_01_finacle_saldos_decrypt
+    nombre: Finacle saldos decrypt
+    intencion: Desencriptar e identificar cuentas base de Finacle para su uso en exclusiones
+      y cruces posteriores
+    sql: input/sql/01_finacle_saldos_decrypt.sql
+    template: input/templates/DA_REQ_CD_IT_STEP_plantilla.docx
+    depende_de: []
+    salida_tablas:
+    - ws_ec_cu_bdclientes.cu_finacle_saldos_decrypt
+    tags:
+    - decrypt
+    - finacle
+    - preparacion
+    es_principal: false
+  - id: paso_02_detalle_cuenta_alnova
+    nombre: Detalle cuenta ALNOVA
+    intencion: Obtener el universo de cuentas ALNOVA excluyendo cuentas ya identificadas
+      en Finacle
+    sql: input/sql/02_detalle_cuenta_alnova.sql
+    template: input/templates/DA_REQ_CD_IT_STEP_plantilla.docx
+    depende_de:
+    - paso_01_finacle_saldos_decrypt
+    salida_tablas:
+    - ws_ec_cu_bdclientes.cu_cap_universo_cuentas
+    tags:
+    - alnova
+    - universo
+    - cuentas
+    es_principal: false
+  - id: paso_03_familia_producto
+    nombre: Familia producto catalogo
+    intencion: Clasificar las cuentas por familia y atributos de producto a partir
+      de catalogos y equivalencias
+    sql: input/sql/03_familia_producto_cat.sql
+    template: input/templates/DA_REQ_CD_IT_STEP_plantilla.docx
+    depende_de:
+    - paso_02_detalle_cuenta_alnova
+    salida_tablas:
+    - ${esquema_cu}.cu_cap_cat_familia_producto
+    tags:
+    - catalogo
+    - producto
+    - clasificacion
+    es_principal: false
+  - id: paso_04_saldo_disponible
+    nombre: Saldo disponible cuentas
+    intencion: Calcular y normalizar el saldo disponible requerido para el portafolio
+      final
+    sql: input/sql/04_saldo_disponible_ctas.sql
+    template: input/templates/DA_REQ_CD_IT_STEP_plantilla.docx
+    depende_de:
+    - paso_02_detalle_cuenta_alnova
+    salida_tablas: []
+    tags:
+    - saldo
+    - normalizacion
+    es_principal: false
+  - id: paso_05_identificador_clientes
+    nombre: Identificador de clientes
+    intencion: Resolver y consolidar identificadores de clientes asociados a las cuentas
+      activas
+    sql: input/sql/05_identificador_ctes.sql
+    template: input/templates/DA_REQ_CD_IT_STEP_plantilla.docx
+    depende_de:
+    - paso_02_detalle_cuenta_alnova
+    salida_tablas:
+    - ${esquema_cu}.cu_cap_portafolio_cuentas_activas
+    tags:
+    - clientes
+    - identificacion
+    es_principal: false
+  - id: paso_06_portafolio_final
+    nombre: Portafolio cuentas activas final
+    intencion: Ensamblar el portafolio final de cuentas activas integrando atributos,
+      saldos e identificadores
+    sql: input/sql/06_cd_cap_portafolio_cuentas_activas.sql
+    template: input/templates/DA_REQ_CD_IT_STEP_plantilla.docx
+    depende_de:
+    - paso_03_familia_producto
+    - paso_04_saldo_disponible
+    - paso_05_identificador_clientes
+    salida_tablas:
+    - ws_ec_cd_bdclientes.cd_cap_portafolio_cuentas_activas
+    tags:
+    - ensamblado
+    - crystal
+    - salida_final
+    es_principal: true
+  - id: paso_02_detalle_cuenta_finacle
+    nombre: 01_cd_cap_cuenta_deltSLD.sql
+    intencion: Obtener el universo de cuentas ALNOVA excluyendo cuentas ya identificadas
+      en FINACLE
+    sql: input/sql/02_detalle_cuenta_finacle.sql
+    template: input/templates/DA_REQ_CD_IT_STEP_plantilla.docx
+    depende_de: []
+    salida_tablas:
+    - ${esquema_cu}.cu_cap_universo_cuentas
+    tags:
+    - detalle
+    - cuenta
+    - finacle
+    es_principal: false

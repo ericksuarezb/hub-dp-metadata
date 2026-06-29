@@ -1,0 +1,1 @@
+{"ai":{"enabled":false,"endpoint":"","apiKey":"","model":"gpt-4o","authHeader":"bearer"},"tests":{"enabled":true,"dataContractCliApiServerUrl":""}}

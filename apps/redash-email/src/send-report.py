@@ -1,0 +1,179 @@
+#!/usr/bin/python3
+
+import argparse
+import contextlib
+import os
+import shlex
+import subprocess
+import sys
+from argparse import RawTextHelpFormatter
+from datetime import datetime
+from urllib.parse import urlencode, urlparse
+
+from jinja2 import Template
+from mailutil import MailUtil
+from reconfig import Config
+from redashapi import Redash
+from requests.exceptions import HTTPError
+
+TS_FORMAT = "%Y-%m-%dT%H:%M"
+
+
+@contextlib.contextmanager
+def remember_cwd():
+    curdir = os.getcwd()
+    try:
+        yield
+    finally:
+        os.chdir(curdir)
+
+
+if __name__ == "__main__":
+    os.chdir(os.path.dirname(__file__))
+    parser = argparse.ArgumentParser(description="", formatter_class=RawTextHelpFormatter)
+    parser.add_argument(
+        "config",
+        nargs="?",
+        default="report.yaml",
+        help="YAML configuration map (default: %(default)s)",
+    )
+    parser.add_argument("--dry-run", action="store_true", default=False, help="Don't send mail")
+    parser.add_argument(
+        "--print", action="store_true", default=False, help="Print config map and exit"
+    )
+    parser.add_argument(
+        "--screenshot",
+        action="store_true",
+        default=False,
+        help="Take a PNG screenshot instead of rendering multi-page PDF",
+    )
+    parser.add_argument(
+        "--verbose", action="store_true", default=False, help="Print external commands"
+    )
+    args = parser.parse_args()
+
+    cfg = Config.from_file(args.config)
+    if args.print:
+        print(cfg)
+        sys.exit(0)
+
+    cfg.validate()
+    redash_url = cfg["redash_url"]
+    redash = Redash(f"{redash_url}/api", cfg["redash_key"])
+
+    tmpdir = os.path.join("reports", datetime.now().strftime(TS_FORMAT))
+    os.makedirs(tmpdir, exist_ok=True)
+    output_ext = "png" if args.screenshot else "pdf"
+
+    for report in cfg["reports"]:
+        (dashboard_id, dashboard_slug) = redash.dashboard_id(report["dashboard"])
+        public_url = redash_url + urlparse(redash.dashboard_public_url(dashboard_id)).path
+
+        try:
+            parameters = report.get("parameters", {None: [None]})
+            assert (
+                len(parameters.keys()) == 1
+            ), f"{report['dashboard']}: only one type of parameter may be specified"
+            key = list(parameters.keys())[0]
+
+            for parameter in parameters[key]:
+                dashboard = (
+                    f"{report['dashboard']} - {parameter}" if parameter else format(report["dashboard"])
+                )
+
+                sm = MailUtil(
+                    cfg["mailhost_url"],
+                    From=cfg["sender"],
+                    To=",".join(report["recipients"]),
+                    Subject=dashboard,
+                )
+
+                if parameter:
+                    parameter_key = f"p_{key}"
+                    qs = urlencode({parameter_key: parameter})
+                else:
+                    qs = ""
+
+                report["dashboard_url"] = (
+                    f"{redash_url}/dashboards/{dashboard_id}-{dashboard_slug}?{qs}"
+                )
+                if redash.is_shared[dashboard_id]:
+                    report["dashboard_public_url"] = f"{public_url}{qs}"
+                else:
+                    report["dashboard_public_url"] = ""
+                body = Template(cfg["message_body"]).render(**report)
+                sm.set_body(body + "\n\n")
+
+                output_path = (
+                    f"{report['dashboard']} - {parameter}.{output_ext}"
+                    if parameter
+                    else f"{report['dashboard']}.{output_ext}"
+                )
+                cmd = [
+                    "node",
+                    "save-report.js",
+                    "--url",
+                    public_url,
+                    "--output",
+                    os.path.join(tmpdir, output_path),
+                ]
+                if args.screenshot:
+                    cmd.extend(["--screenshot"])
+                if parameter:
+                    cmd.extend(["--param", f"{key}={parameter}"])
+                if "render_delay" in cfg:
+                    cmd.extend(["--delay", str(cfg["render_delay"])])
+                if "navigation_timeout" in cfg:
+                    cmd.extend(["--timeout", str(cfg["navigation_timeout"])])
+
+                if args.verbose:
+                    print(shlex.join(cmd))
+                subprocess.check_call(cmd)
+
+                with remember_cwd():
+                    os.chdir(tmpdir)
+                    if args.screenshot:
+                        sm.attach(output_path, mimetype="image/png")
+                    else:
+                        sm.attach(output_path, mimetype="application/pdf")
+
+                attachments = report.get("attachments", [])
+                for redash_query in attachments:
+                    q_name = redash_query["query"]
+                    q_extra = redash_query.get("extra_parameters", {})
+                    csv_filename = f"{q_name} - {parameter}.csv" if parameter else f"{q_name}.csv"
+
+                    (query_id, query_params) = redash.dashboard_widget(dashboard_id, q_name)
+                    if parameter:
+                        query_params[key] = parameter
+
+                    query_params.update(q_extra)
+
+                    try:
+                        result_id = redash.initiate_query(query_id, query_params)
+                        cmd = [
+                            "curl",
+                            "-sS",
+                            "-k",
+                            "-o",
+                            os.path.join(tmpdir, csv_filename),
+                            f"{redash_url}/api/query_results/{result_id}.csv?api_key={cfg['redash_key']}",
+                        ]
+                    except HTTPError as ex:
+                        print(ex.args[0])
+                        continue
+
+                    if args.verbose:
+                        print(shlex.join(cmd))
+                    subprocess.check_call(cmd)
+
+                    with remember_cwd():
+                        os.chdir(tmpdir)
+                        sm.attach(csv_filename, mimetype="text/csv")
+
+                if not args.dry_run:
+                    if args.verbose:
+                        print("Connect to", sm)
+                    sm.send_smtp()
+        finally:
+            redash.dashboard_reset(dashboard_id)

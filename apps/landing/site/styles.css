@@ -1,0 +1,68 @@
+:root {
+  color-scheme: light;
+}
+
+body.hub-body {
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.95), transparent 28%),
+    linear-gradient(145deg, #efe8da 0%, #f7f4ed 45%, #e8f1ef 100%);
+}
+
+.tracking {
+  letter-spacing: 0.14em;
+}
+
+.hub-sidebar {
+  color: #f4fbfa;
+  background:
+    radial-gradient(circle at top right, rgba(255, 208, 102, 0.16), transparent 24%),
+    linear-gradient(180deg, #17635e 0%, #122a2c 100%);
+}
+
+.text-sidebar {
+  color: rgba(244, 251, 250, 0.82);
+}
+
+.hub-panel {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.numbered-list .list-group-item {
+  padding-left: 0;
+  padding-right: 0;
+  border-color: rgba(33, 37, 41, 0.08);
+  background: transparent;
+  font-weight: 600;
+}
+
+.app-card {
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.app-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 1rem 2.5rem rgba(33, 37, 41, 0.1) !important;
+}
+
+.featured-card {
+  background: linear-gradient(180deg, #fff6d8 0%, #ffffff 100%);
+}
+
+.app-port {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #6c757d;
+}
+
+.wiki-hero {
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 1rem 2.5rem rgba(33, 37, 41, 0.08);
+}
+
+@media (max-width: 991.98px) {
+  .hub-sidebar {
+    min-height: auto;
+  }
+}
