@@ -260,13 +260,19 @@ def detect_parse_archetype(
 def _find_publish_statements(statements: Sequence[str]) -> List[Tuple[str, str]]:
     selected: List[Tuple[str, str]] = []
     for statement in statements:
-        if re.search(r"\binsert\b", statement, flags=re.IGNORECASE):
+        try:
+            statement_ast = sqlglot.parse_one(statement, read="hive")
+        except Exception:
+            continue
+
+        if isinstance(statement_ast, exp.Insert):
             selected.append(("insert_overwrite", statement))
             continue
-        if re.search(r"\bcreate\s+table\b", statement, flags=re.IGNORECASE) and re.search(
-            r"\bas\s+select\b", statement, flags=re.IGNORECASE
-        ):
-            selected.append(("create_table_as_select", statement))
+
+        if isinstance(statement_ast, exp.Create):
+            expression = statement_ast.expression
+            if isinstance(expression, getattr(exp, "Subqueryable", exp.Query)):
+                selected.append(("create_table_as_select", statement))
     return selected
 
 

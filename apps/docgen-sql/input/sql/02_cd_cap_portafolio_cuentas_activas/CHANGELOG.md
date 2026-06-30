@@ -4,6 +4,18 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 
 El formato está basado en Keep a Changelog.
 
+## [Unreleased]
+
+### Fixed
+- `apps/docgen-sql/src/sql_parser.py`
+  - Se corrigió la detección de publicaciones soportadas para reconocer sentencias `CREATE TABLE ... AS WITH ... SELECT`.
+  - El parser ahora usa el AST de `sqlglot` para distinguir `INSERT` y `CREATE TABLE AS SELECT`, evitando falsos negativos cuando el `SELECT` final viene precedido por CTEs.
+
+### Added
+- `apps/docgen-sql/tests/test_sql_parser.py`
+  - Se agregó cobertura para CTAS con bloque `WITH`.
+  - Se ajustó la expectativa de publicaciones múltiples para reflejar tablas intermedias detectadas correctamente.
+
 ## [1.0.0] - 2026-04-29
 
 ### Added

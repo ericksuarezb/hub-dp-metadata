@@ -106,13 +106,40 @@ def test_create_table_as_select_detects_target_table(tmp_path):
     assert analysis.metadata["parse_archetype"] == "create_table_as_select_published_table"
 
 
+def test_create_table_as_with_select_is_detected(tmp_path):
+    sql_path = tmp_path / "ctas_with.sql"
+    sql_path.write_text(
+        "\n".join(
+            [
+                "DROP TABLE IF EXISTS ${esquema_cu}.demo_salida PURGE;",
+                "CREATE TABLE ${esquema_cu}.demo_salida STORED AS PARQUET AS",
+                "WITH base AS (",
+                "    SELECT 1 AS id, 'demo' AS tipo",
+                ")",
+                "SELECT id, tipo FROM base;",
+                "COMPUTE STATS ${esquema_cu}.demo_salida;",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    analysis = parse_sql_file(sql_path, _demo_config())
+
+    assert analysis.target_table == "ws_ec_cu_baz_bdclientes.demo_salida"
+    assert analysis.metadata["statement_type"] == "create_table_as_select"
+    assert analysis.compute_stats_tables == ["ws_ec_cu_baz_bdclientes.demo_salida"]
+    assert analysis.ctes == ["base"]
+
+
 def test_multiple_publications_are_captured_in_analysis():
     analysis = parse_sql_file("input/sql/02_cd_cap_portafolio_cuentas_activas/04_saldo_disponible_ctas.sql", _demo_config())
 
     assert [item.target_table for item in analysis.publications] == [
+        "ws_ec_cu_baz_bdclientes.cu_cap_saldos_disponibles_ctas_prev",
         "ws_ec_cu_baz_bdclientes.cu_cap_saldos_disponibles_ctas",
     ]
-    assert analysis.publications[0].role == "final"
+    assert analysis.publications[0].role == "intermedia"
+    assert analysis.publications[1].role == "final"
 
 
 def test_coalesce_lineage_expands_ctes_and_union_sources():
